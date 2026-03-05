@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --cyan:#00e5ff;--cyan2:#00b8d4;--cyan3:rgba(0,229,255,0.15);--cyan4:rgba(0,229,255,0.05);
+  --dark:#020d12;--dark2:#041820;
+  --glow:0 0 20px rgba(0,229,255,0.6),0 0 40px rgba(0,229,255,0.3);
+  --glow-sm:0 0 8px rgba(0,229,255,0.8),0 0 16px rgba(0,229,255,0.4);
+}
+body{background:var(--dark);color:var(--cyan);font-family:'Rajdhani',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.55) 100%);pointer-events:none;z-index:9998;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 24px;height:52px;border-bottom:1px solid rgba(0,229,255,0.2);background:linear-gradient(180deg,rgba(0,40,55,0.9),rgba(2,13,18,0.9));flex-shrink:0;position:relative;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.logo{font-family:'Orbitron',monospace;font-size:17px;font-weight:900;letter-spacing:0.3em;text-shadow:var(--glow);display:flex;align-items:center;gap:10px;}
+.logo-sub{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.2em;color:rgba(0,229,255,0.45);}
+.hud-time{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:0.15em;text-shadow:var(--glow-sm);text-align:center;}
+.hud-date{font-size:9px;letter-spacing:0.2em;color:rgba(0,229,255,0.4);text-align:center;margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.s-item{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.s-lbl{font-size:7px;letter-spacing:0.15em;color:rgba(0,229,255,0.35);text-transform:uppercase;}
+.s-val{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:0.1em;text-shadow:var(--glow-sm);}
+.cfg-btn{background:transparent;border:1px solid rgba(0,229,255,0.3);color:var(--cyan);padding:5px 13px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:0.1em;cursor:pointer;transition:all .2s;text-transform:uppercase;border-radius:1px;}
+.cfg-btn:hover{background:var(--cyan3);border-color:var(--cyan);box-shadow:var(--glow-sm);}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:200px;border-right:1px solid rgba(0,229,255,0.15);display:flex;flex-direction:column;padding:14px;gap:12px;flex-shrink:0;}
+.sb-block{border:1px solid rgba(0,229,255,0.2);padding:10px;background:rgba(0,229,255,0.02);position:relative;}
+.sb-block::before{content:'';position:absolute;top:-1px;left:8px;right:8px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.sb-title{font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.2em;color:rgba(0,229,255,0.4);text-transform:uppercase;margin-bottom:8px;}
+.mode-btn{display:flex;align-items:center;gap:8px;width:100%;padding:7px 9px;background:transparent;border:1px solid transparent;color:rgba(0,229,255,0.4);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-align:left;margin-bottom:2px;border-radius:1px;}
+.mode-btn:hover{border-color:rgba(0,229,255,0.3);color:var(--cyan);background:var(--cyan4);}
+.mode-btn.active{border-color:rgba(0,229,255,0.5);color:var(--cyan);background:var(--cyan3);box-shadow:inset 0 0 10px rgba(0,229,255,0.08);}
+.q-btn{display:block;width:100%;padding:6px 8px;background:transparent;border:1px solid rgba(0,229,255,0.15);color:rgba(0,229,255,0.45);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:0.04em;cursor:pointer;transition:all .2s;text-align:left;margin-bottom:3px;border-radius:1px;line-height:1.4;}
+.q-btn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan4);text-shadow:var(--glow-sm);}
+
+/* CENTER */
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* AVATAR */
+.avatar-area{height:270px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;border-bottom:1px solid rgba(0,229,255,0.1);}
+.corner{position:absolute;width:18px;height:18px;border-color:rgba(0,229,255,0.4);border-style:solid;}
+.corner-tl{top:10px;left:10px;border-width:2px 0 0 2px;}
+.corner-tr{top:10px;right:10px;border-width:2px 2px 0 0;}
+.corner-bl{bottom:10px;left:10px;border-width:0 0 2px 2px;}
+.corner-br{bottom:10px;right:10px;border-width:0 2px 2px 0;}
+.side-m{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;}
+.side-m.left{left:18px;}
+.side-m.right{right:18px;align-items:flex-end;}
+.metric{display:flex;flex-direction:column;gap:2px;}
+.m-lbl{font-family:'Orbitron',monospace;font-size:6px;letter-spacing:0.15em;color:rgba(0,229,255,0.3);text-transform:uppercase;}
+.m-val{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:0.08em;color:var(--cyan);text-shadow:var(--glow-sm);}
+.m-bar{width:55px;height:2px;background:rgba(0,229,255,0.1);border-radius:1px;overflow:hidden;}
+.m-fill{height:100%;background:var(--cyan);box-shadow:0 0 4px var(--cyan);transition:width .3s;}
+
+/* REACTOR */
+.reactor{position:relative;width:210px;height:210px;}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,0.3);}
+.ring-out{inset:0;animation:rot1 18s linear infinite;}
+.ring-out::before{content:'';position:absolute;top:3px;left:50%;width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:var(--glow);transform:translateX(-50%);}
+.ring-mid{inset:18px;border-width:2px;border-color:rgba(0,229,255,0.45);animation:rot2 7s linear infinite;}
+.ring-mid::before,.ring-mid::after{content:'';position:absolute;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:var(--glow);}
+.ring-mid::before{top:-3px;left:50%;transform:translateX(-50%);}
+.ring-mid::after{bottom:-3px;left:50%;transform:translateX(-50%);}
+.ring-in{inset:42px;border-color:rgba(0,229,255,0.6);animation:rot1 4s linear infinite reverse;}
+.ticks{position:absolute;inset:8px;border-radius:50%;animation:rot1 14s linear infinite;}
+.tick{position:absolute;width:100%;height:100%;top:0;left:0;}
+.tick::before{content:'';position:absolute;top:0;left:50%;width:1px;height:7px;background:rgba(0,229,255,0.5);transform:translateX(-50%);}
+.core{position:absolute;inset:62px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,0.15) 0%,rgba(0,40,55,0.9) 60%,var(--dark) 100%);border:2px solid rgba(0,229,255,0.5);display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(0,229,255,0.3),inset 0 0 18px rgba(0,229,255,0.08);transition:all .1s;}
+.core-inner{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,0.8),rgba(0,229,255,0.2));box-shadow:0 0 18px rgba(0,229,255,0.8),0 0 36px rgba(0,229,255,0.4);animation:coreGlow 2s ease-in-out infinite;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:8px;font-weight:900;color:var(--dark);}
+@keyframes coreGlow{0%,100%{box-shadow:0 0 18px rgba(0,229,255,0.8),0 0 36px rgba(0,229,255,0.4);}50%{box-shadow:0 0 28px rgba(0,229,255,1),0 0 56px rgba(0,229,255,0.6);}}
+.reactor.speaking .core{animation:spkPulse .15s ease-in-out infinite alternate;}
+.reactor.speaking .ring-mid{animation:rot2 1.5s linear infinite;border-color:var(--cyan);box-shadow:0 0 14px rgba(0,229,255,0.5);}
+.reactor.speaking .core-inner{animation:coreSpk .1s ease-in-out infinite alternate;}
+@keyframes spkPulse{from{box-shadow:0 0 18px rgba(0,229,255,0.3),inset 0 0 8px rgba(0,229,255,0.1);}to{box-shadow:0 0 38px rgba(0,229,255,0.7),inset 0 0 28px rgba(0,229,255,0.3);}}
+@keyframes coreSpk{from{transform:scale(1);box-shadow:0 0 18px rgba(0,229,255,0.8);}to{transform:scale(1.18);box-shadow:0 0 32px rgba(0,229,255,1),0 0 55px rgba(0,229,255,0.5);}}
+.waveform{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;height:28px;opacity:0;transition:opacity .3s;}
+.waveform.active{opacity:1;}
+.w-bar{width:3px;background:var(--cyan);border-radius:2px;box-shadow:0 0 5px var(--cyan);animation:wbar .4s ease-in-out infinite alternate;min-height:3px;}
+@keyframes wbar{from{height:3px;}to{height:22px;}}
+.status-txt{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:0.2em;color:rgba(0,229,255,0.5);white-space:nowrap;text-shadow:var(--glow-sm);}
+
+/* CHAT */
+.chat-sec{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+.messages::-webkit-scrollbar{width:2px;}
+.messages::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.25);}
+.msg{display:flex;gap:10px;animation:msgIn .25s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.msg.user{flex-direction:row-reverse;}
+.av{width:28px;height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;flex-shrink:0;border:1px solid rgba(0,229,255,0.3);letter-spacing:0.04em;}
+.msg.user .av{background:rgba(0,229,255,0.05);color:rgba(0,229,255,0.55);}
+.msg.jarvis .av{background:rgba(0,229,255,0.1);color:var(--cyan);box-shadow:var(--glow-sm);}
+.msg-body{max-width:75%;display:flex;flex-direction:column;gap:4px;}
+.msg.user .msg-body{align-items:flex-end;}
+.bubble{padding:10px 13px;border-radius:2px;font-size:13px;line-height:1.75;white-space:pre-wrap;font-weight:400;letter-spacing:0.02em;}
+.msg.user .bubble{background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.2);color:rgba(0,229,255,0.85);border-bottom-right-radius:0;}
+.msg.jarvis .bubble{background:rgba(0,10,18,0.9);border:1px solid rgba(0,229,255,0.22);color:rgba(0,229,255,0.82);border-bottom-left-radius:0;position:relative;}
+.msg.jarvis .bubble::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);opacity:0.35;}
+.msg-acts{display:flex;gap:4px;opacity:0;transition:opacity .2s;flex-wrap:wrap;}
+.msg:hover .msg-acts{opacity:1;}
+.act-btn{padding:2px 8px;border:1px solid rgba(0,229,255,0.2);background:transparent;color:rgba(0,229,255,0.45);font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.08em;cursor:pointer;transition:all .15s;text-transform:uppercase;border-radius:1px;}
+.act-btn:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow-sm);background:var(--cyan4);}
+.act-btn.n{border-color:rgba(0,255,100,0.2);color:rgba(0,255,100,0.45);}
+.act-btn.n:hover{border-color:rgba(0,255,100,0.7);color:rgba(0,255,100,0.9);box-shadow:0 0 8px rgba(0,255,100,0.3);}
+.typing-ind{display:flex;align-items:center;gap:5px;padding:10px 13px;}
+.t-dot{width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 5px var(--cyan);animation:tdot 1s ease-in-out infinite;}
+.t-dot:nth-child(2){animation-delay:.15s;}.t-dot:nth-child(3){animation-delay:.3s;}
+@keyframes tdot{0%,100%{opacity:.2;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;text-align:center;}
+.empty-title{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:0.3em;text-shadow:var(--glow);text-transform:uppercase;}
+.empty-sub{font-size:11px;letter-spacing:0.08em;color:rgba(0,229,255,0.35);max-width:300px;line-height:1.8;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;}
+.chip{padding:5px 11px;border:1px solid rgba(0,229,255,0.2);background:transparent;color:rgba(0,229,255,0.45);font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:0.06em;cursor:pointer;transition:all .2s;border-radius:1px;}
+.chip:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan4);box-shadow:var(--glow-sm);}
+
+/* INPUT */
+.input-area{padding:12px 20px 15px;border-top:1px solid rgba(0,229,255,0.1);position:relative;}
+.input-area::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.25;}
+.toolbar{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
+.tb-btn{padding:3px 9px;border:1px solid rgba(0,229,255,0.18);background:transparent;color:rgba(0,229,255,0.38);font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.08em;cursor:pointer;transition:all .2s;text-transform:uppercase;border-radius:1px;}
+.tb-btn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan4);}
+.tb-btn.on{border-color:var(--cyan);color:var(--cyan);background:var(--cyan3);box-shadow:var(--glow-sm);}
+.input-wrap{display:flex;gap:9px;align-items:flex-end;border:1px solid rgba(0,229,255,0.22);border-radius:2px;padding:10px 13px;background:rgba(0,10,18,0.8);transition:border-color .2s;}
+.input-wrap:focus-within{border-color:rgba(0,229,255,0.45);box-shadow:0 0 12px rgba(0,229,255,0.08);}
+#inp{flex:1;background:transparent;border:none;outline:none;color:rgba(0,229,255,0.88);font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:0.04em;line-height:1.5;resize:none;max-height:120px;min-height:22px;}
+#inp::placeholder{color:rgba(0,229,255,0.18);font-size:11px;letter-spacing:0.1em;}
+.send-btn{width:34px;height:34px;border-radius:2px;background:var(--cyan3);border:1px solid var(--cyan);color:var(--cyan);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .2s;box-shadow:var(--glow-sm);}
+.send-btn:hover{background:var(--cyan);color:var(--dark);box-shadow:var(--glow);}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;box-shadow:none;}
+.mic-btn{width:34px;height:34px;border-radius:2px;background:transparent;border:1px solid rgba(0,229,255,0.2);color:rgba(0,229,255,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .2s;}
+.mic-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.mic-btn.listening{border-color:rgba(255,50,50,0.8);color:rgba(255,80,80,0.9);animation:micP .8s ease-in-out infinite;}
+@keyframes micP{0%,100%{box-shadow:0 0 5px rgba(255,50,50,0.2);}50%{box-shadow:0 0 14px rgba(255,50,50,0.6);}}
+
+/* RIGHT PANEL */
+.rpanel{width:215px;border-left:1px solid rgba(0,229,255,0.15);display:flex;flex-direction:column;overflow-y:auto;}
+.rpanel::-webkit-scrollbar{width:2px;}
+.rpanel::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.15);}
+.rp-sec{padding:12px 13px;border-bottom:1px solid rgba(0,229,255,0.08);position:relative;}
+.rp-sec::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.15),transparent);}
+.rp-title{font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.2em;color:rgba(0,229,255,0.35);text-transform:uppercase;margin-bottom:9px;}
+.dna-tag{display:inline-flex;padding:2px 7px;border:1px solid rgba(0,229,255,0.2);font-family:'Orbitron',monospace;font-size:7px;color:rgba(0,229,255,0.55);letter-spacing:0.08em;margin:0 2px 3px 0;border-radius:1px;background:rgba(0,229,255,0.02);}
+.n-input{width:100%;background:rgba(0,10,18,0.8);border:1px solid rgba(0,229,255,0.18);color:rgba(0,229,255,0.8);padding:6px 8px;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:0.04em;outline:none;transition:border-color .2s;margin-bottom:5px;border-radius:1px;}
+.n-input:focus{border-color:rgba(0,229,255,0.4);}
+.n-input::placeholder{color:rgba(0,229,255,0.18);}
+.n-btn{background:rgba(0,255,100,0.04);border:1px solid rgba(0,255,100,0.22);color:rgba(0,255,100,0.65);padding:5px 9px;font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.1em;cursor:pointer;transition:all .2s;width:100%;margin-bottom:4px;border-radius:1px;text-transform:uppercase;}
+.n-btn:hover{background:rgba(0,255,100,0.1);border-color:rgba(0,255,100,0.55);}
+.p-btn{padding:5px 9px;font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.08em;cursor:pointer;transition:all .2s;width:100%;margin-bottom:4px;border-radius:1px;text-transform:uppercase;}
+.p-ig{background:rgba(180,80,140,0.04);border:1px solid rgba(180,80,140,0.22);color:rgba(180,80,140,0.65);}
+.p-ig:hover{background:rgba(180,80,140,0.1);}
+.p-tt{background:rgba(0,220,200,0.04);border:1px solid rgba(0,220,200,0.18);color:rgba(0,220,200,0.65);}
+.p-tt:hover{background:rgba(0,220,200,0.1);}
+.post-note{font-family:'Rajdhani',sans-serif;font-size:9px;color:rgba(0,229,255,0.28);margin-top:6px;line-height:1.9;letter-spacing:0.04em;display:none;}
+.n-log{display:flex;flex-direction:column;gap:4px;margin-top:6px;}
+.n-item{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid rgba(0,255,100,0.12);background:rgba(0,255,100,0.02);font-family:'Rajdhani',sans-serif;font-size:10px;color:rgba(0,255,100,0.55);border-radius:1px;}
+.preview-box{background:rgba(0,5,10,0.9);border:1px solid rgba(0,229,255,0.12);border-left:2px solid var(--cyan);padding:9px;font-size:10px;line-height:1.7;white-space:pre-wrap;color:rgba(0,229,255,0.65);max-height:150px;overflow-y:auto;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em;}
+
+/* MODEL SELECT */
+.model-select{width:100%;background:rgba(0,10,18,0.9);border:1px solid rgba(0,229,255,0.2);color:rgba(0,229,255,0.8);padding:6px 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:0.05em;outline:none;cursor:pointer;margin-bottom:5px;border-radius:1px;}
+.model-select option{background:#020d12;color:var(--cyan);}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal{background:rgba(2,12,18,0.98);border:1px solid rgba(0,229,255,0.3);border-radius:2px;padding:24px;width:420px;max-width:92vw;box-shadow:0 0 40px rgba(0,229,255,0.12);transform:translateY(8px);transition:transform .2s;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.modal-ov.open .modal{transform:translateY(0);}
+.m-title{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:0.2em;text-shadow:var(--glow);margin-bottom:4px;text-transform:uppercase;}
+.m-sub{font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:0.15em;color:rgba(0,229,255,0.3);margin-bottom:18px;text-transform:uppercase;}
+.m-label{font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.15em;color:rgba(0,229,255,0.38);text-transform:uppercase;display:block;margin-bottom:5px;}
+.m-hint{font-family:'Rajdhani',sans-serif;font-size:10px;color:rgba(0,229,255,0.3);margin-bottom:10px;letter-spacing:0.04em;line-height:1.6;}
+.m-input{width:100%;background:rgba(0,10,18,0.9);border:1px solid rgba(0,229,255,0.2);color:rgba(0,229,255,0.9);padding:9px 11px;font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:0.04em;outline:none;transition:border-color .2s;margin-bottom:12px;border-radius:1px;}
+.m-input:focus{border-color:rgba(0,229,255,0.5);box-shadow:0 0 8px rgba(0,229,255,0.08);}
+.m-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+.m-cancel{padding:6px 13px;border:1px solid rgba(0,229,255,0.2);background:transparent;color:rgba(0,229,255,0.45);font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.m-cancel:hover{border-color:var(--cyan);color:var(--cyan);}
+.m-save{padding:6px 13px;border:1px solid var(--cyan);background:var(--cyan3);color:var(--cyan);font-family:'Orbitron',monospace;font-size:7px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all .2s;box-shadow:var(--glow-sm);}
+.m-save:hover{background:var(--cyan);color:var(--dark);}
+.toast{position:fixed;bottom:20px;right:20px;background:rgba(2,12,18,0.98);border:1px solid rgba(0,229,255,0.3);padding:10px 14px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:0.1em;color:var(--cyan);z-index:2000;transform:translateY(40px);opacity:0;transition:all .25s;max-width:280px;text-transform:uppercase;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-color:rgba(0,255,100,0.35);color:rgba(0,255,100,0.8);}
+.toast.err{border-color:rgba(255,50,50,0.35);color:rgba(255,100,100,0.8);}
+@keyframes rot1{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes rot2{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+.spin{display:inline-block;animation:rot1 1s linear infinite;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">◈ JARVIS <span class="logo-sub">/ SISTEMA LUCCAS</span></div>
+  <div style="text-align:center">
+    <div class="hud-time" id="hudTime">00:00:00</div>
+    <div class="hud-date" id="hudDate">—</div>
+  </div>
+  <div class="topbar-right">
+    <div class="s-item"><div class="s-lbl">Sistema</div><div class="s-val" style="color:#00ff64;text-shadow:0 0 8px rgba(0,255,100,0.8)">ONLINE</div></div>
+    <div class="s-item"><div class="s-lbl">Motor</div><div class="s-val" id="engineLabel" style="font-size:8px">GROQ</div></div>
+    <div class="s-item"><div class="s-lbl">DNA</div><div class="s-val" id="dnaLabel">ATIVO</div></div>
+    <button class="cfg-btn" onclick="openCfg()">⚙ CONFIG</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-block">
+      <div class="sb-title">Modo</div>
+      <button class="mode-btn active" onclick="setMode('chat',this)">◈ CONVERSA</button>
+      <button class="mode-btn" onclick="setMode('copy',this)">✦ COPY</button>
+      <button class="mode-btn" onclick="setMode('image',this)">◻ IMAGEM</button>
+      <button class="mode-btn" onclick="setMode('strategy',this)">⚡ ESTRATÉGIA</button>
+    </div>
+    <div class="sb-block" style="flex:1;overflow-y:auto;">
+      <div class="sb-title">Atalhos</div>
+      <button class="q-btn" onclick="qp('Crie uma legenda Instagram com gancho de bastidor, loop Zeigarnik e 4 gatilhos do meu DNA')">▸ Legenda Instagram</button>
+      <button class="q-btn" onclick="qp('Script TikTok 30 segundos no meu estilo — direto, virada narrativa, detalhe sensorial')">▸ Script TikTok</button>
+      <button class="q-btn" onclick="qp('Crie só o gancho do post — Zeigarnik, especificidade, espelho do leitor')">▸ Só o gancho</button>
+      <button class="q-btn" onclick="qp('5 CTAs suaves no meu estilo — sem link da bio, sem emoji')">▸ 5 CTAs</button>
+      <button class="q-btn" onclick="qp('Analise meu DNA e diga quais gatilhos estou subutilizando')">▸ Análise DNA</button>
+      <button class="q-btn" onclick="qp('Sequência 3 posts com loop serial — cada um promete o próximo')">▸ Sequência posts</button>
+      <button class="q-btn" onclick="qp('Prompt imagem estilo Luccas para Midjourney — casual, bastidor real')">▸ Prompt imagem</button>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="avatar-area">
+      <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+      <div class="side-m left">
+        <div class="metric"><div class="m-lbl">DNA</div><div class="m-val">100%</div><div class="m-bar"><div class="m-fill" style="width:100%"></div></div></div>
+        <div class="metric"><div class="m-lbl">Zeigarnik</div><div class="m-val" id="mZ">87%</div><div class="m-bar"><div class="m-fill" id="mZb" style="width:87%"></div></div></div>
+        <div class="metric"><div class="m-lbl">Copys</div><div class="m-val" id="mC">0</div><div class="m-bar"><div class="m-fill" id="mCb" style="width:0%"></div></div></div>
+      </div>
+
+      <div class="reactor" id="reactor">
+        <div class="ticks" id="ticks"></div>
+        <div class="ring ring-out"></div>
+        <div class="ring ring-mid"></div>
+        <div class="ring ring-in"></div>
+        <div class="core"><div class="core-inner">JV</div></div>
+      </div>
+
+      <div class="waveform" id="waveform">
+        <div class="w-bar" style="animation-delay:0s;animation-duration:.3s"></div>
+        <div class="w-bar" style="animation-delay:.05s;animation-duration:.35s"></div>
+        <div class="w-bar" style="animation-delay:.1s;animation-duration:.25s"></div>
+        <div class="w-bar" style="animation-delay:.15s;animation-duration:.4s"></div>
+        <div class="w-bar" style="animation-delay:.2s;animation-duration:.3s"></div>
+        <div class="w-bar" style="animation-delay:.25s;animation-duration:.28s"></div>
+        <div class="w-bar" style="animation-delay:.1s;animation-duration:.32s"></div>
+        <div class="w-bar" style="animation-delay:.05s;animation-duration:.27s"></div>
+        <div class="w-bar" style="animation-delay:.2s;animation-duration:.38s"></div>
+        <div class="w-bar" style="animation-delay:.15s;animation-duration:.3s"></div>
+        <div class="w-bar" style="animation-delay:0s;animation-duration:.33s"></div>
+      </div>
+
+      <div class="side-m right">
+        <div class="metric" style="align-items:flex-end"><div class="m-lbl">Msgs</div><div class="m-val" id="mM">0</div><div class="m-bar"><div class="m-fill" id="mMb" style="width:0%"></div></div></div>
+        <div class="metric" style="align-items:flex-end"><div class="m-lbl">Notion</div><div class="m-val" id="mN" style="font-size:8px;color:rgba(0,229,255,0.35)">OFF</div><div class="m-bar"><div class="m-fill" id="mNb" style="width:0%;background:rgba(0,255,100,0.7)"></div></div></div>
+        <div class="metric" style="align-items:flex-end"><div class="m-lbl">Voz</div><div class="m-val" id="mV">ON</div><div class="m-bar"><div class="m-fill" id="mVb" style="width:100%"></div></div></div>
+      </div>
+
+      <div class="status-txt" id="statusTxt">AGUARDANDO COMANDO</div>
+    </div>
+
+    <div class="chat-sec">
+      <div class="messages" id="msgs">
+        <div class="empty" id="empty">
+          <div class="empty-title">◈ Sistema Online</div>
+          <div class="empty-sub">Jarvis com Groq pronto. DNA de copy ativo. Aguardando seu comando.</div>
+          <div class="chips">
+            <div class="chip" onclick="qp('O que você sabe sobre o meu DNA de copy?')">DNA status</div>
+            <div class="chip" onclick="qp('Crie uma legenda sobre faturar mais com menos posts')">Legenda</div>
+            <div class="chip" onclick="qp('Script TikTok 60s sobre autenticidade que converte')">TikTok</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="toolbar">
+          <button class="tb-btn on" id="tbDna" onclick="toggleDna()">DNA</button>
+          <button class="tb-btn on" id="tbVoz" onclick="toggleVoice()">VOZ</button>
+          <button class="tb-btn" id="tbAutoN" onclick="toggleAutoN()">AUTO-NOTION</button>
+          <button class="tb-btn" onclick="addInp('Use o efeito Zeigarnik. ')">LOOP</button>
+          <button class="tb-btn" onclick="addInp('Inclua detalhe sensorial cirúrgico. ')">SENSORIAL</button>
+        </div>
+        <div class="input-wrap">
+          <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Falar">🎤</button>
+          <textarea id="inp" placeholder="AGUARDANDO INPUT..." rows="1" onkeydown="handleKey(event)" oninput="autoR(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="rpanel">
+    <div class="rp-sec">
+      <div class="rp-title">DNA Gatilhos</div>
+      <span class="dna-tag">Zeigarnik</span><span class="dna-tag">Tribal</span>
+      <span class="dna-tag">Osmose</span><span class="dna-tag">Micro-sim</span>
+      <span class="dna-tag">Sensorial</span><span class="dna-tag">Espelho</span>
+      <span class="dna-tag">Contraste</span><span class="dna-tag">Dissonância</span>
+      <span class="dna-tag">Reciprocidade</span>
+    </div>
+    <div class="rp-sec">
+      <div class="rp-title">Modelo Groq</div>
+      <select class="model-select" id="modelSelect">
+        <option value="llama-3.3-70b-versatile">Llama 3.3 70B ⭐ Recomendado</option>
+        <option value="llama-3.1-8b-instant">Llama 3.1 8B (mais rápido)</option>
+        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+        <option value="gemma2-9b-it">Gemma 2 9B</option>
+      </select>
+    </div>
+    <div class="rp-sec">
+      <div class="rp-title">Notion</div>
+      <input class="n-input" id="nKey" type="password" placeholder="API Key (secret_...)" />
+      <input class="n-input" id="nDb" placeholder="Database ID" />
+      <button class="n-btn" onclick="connectNotion()">▸ CONECTAR</button>
+      <div id="nLog" class="n-log"></div>
+    </div>
+    <div class="rp-sec">
+      <div class="rp-title">Publicar</div>
+      <button class="p-btn p-ig" onclick="postShare('instagram')">▸ COPIAR → INSTAGRAM</button>
+      <button class="p-btn p-tt" onclick="postShare('tiktok')">▸ COPIAR → TIKTOK</button>
+      <div class="post-note" id="postNote"></div>
+    </div>
+    <div class="rp-sec" id="previewSec" style="display:none">
+      <div class="rp-title">Último Output</div>
+      <div class="preview-box" id="previewBox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-ov" id="cfgModal">
+  <div class="modal">
+    <div class="m-title">◈ Configurações</div>
+    <div class="m-sub">Credenciais do Sistema</div>
+    <label class="m-label">Groq API Key</label>
+    <div class="m-hint">Pegue grátis em: console.groq.com → API Keys → Create</div>
+    <input class="m-input" id="cfgAk" type="password" placeholder="gsk_..." />
+    <label class="m-label">ElevenLabs API Key (voz realista)</label>
+    <div class="m-hint">elevenlabs.io → Profile → API Key (plano grátis funciona)</div>
+    <input class="m-input" id="cfgElKey" type="password" placeholder="sk_..." />
+    <label class="m-label">ElevenLabs Voice ID (opcional)</label>
+    <div class="m-hint">Deixe em branco para usar Daniel (PT-BR padrão)</div>
+    <input class="m-input" id="cfgElVoice" placeholder="onwK4e9ZLuTAKqWW03F9" />
+    <label class="m-label">Notion API Key (opcional)</label>
+    <input class="m-input" id="cfgNk" type="password" placeholder="secret_..." />
+    <label class="m-label">Notion Database ID (opcional)</label>
+    <input class="m-input" id="cfgNd" placeholder="ID de 32 caracteres..." />
+    <label class="m-label">Nome do Operador</label>
+    <input class="m-input" id="cfgName" placeholder="Luccas" />
+    <div class="m-acts">
+      <button class="m-cancel" onclick="closeCfg()">Cancelar</button>
+      <button class="m-save" onclick="saveCfg()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// TICKS
+const ticks = document.getElementById('ticks');
+for(let i=0;i<36;i++){
+  const t=document.createElement('div'); t.className='tick';
+  t.style.transform=`rotate(${i*10}deg)`;
+  t.style.opacity = i%3===0 ? '1' : '0.3';
+  ticks.appendChild(t);
+}
+
+// CLOCK
+function updateClock(){
+  const n=new Date();
+  document.getElementById('hudTime').textContent=n.toLocaleTimeString('pt-BR',{hour12:false});
+  document.getElementById('hudDate').textContent=n.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
+}
+updateClock(); setInterval(updateClock,1000);
+
+// STATE
+const S={
+  mode:'chat', dna:true, voice:true, autoN:false,
+  history:[], lastCopy:'', copyCount:0, msgCount:0,
+  ak:'', nk:'', ndb:'', name:'Luccas', speaking:false,
+  elKey:'', elVoice:''
+};
+try{const c=sessionStorage.getItem('jcfg'); if(c) Object.assign(S,JSON.parse(c));}catch(e){}
+
+// DNA PROMPT
+const DNA=()=>`Você é o Jarvis — assistente de IA do ${S.name||'Luccas'}, especialista em copy e criação de conteúdo.
+
+Você domina completamente o DNA de copy do ${S.name||'Luccas'} e aplica cada técnica com precisão cirúrgica.
+
+TOM: Direto, confessional, provocativo sem agressão. Bastidor. Coloquial mas inteligente. NUNCA motivacional. NUNCA coach.
+
+ESTRUTURA DE COPY:
+• Gancho com especificidade real — data, horário, situação concreta
+• Loop Zeigarnik aberto no 1º ou 2º parágrafo — fechar só antes do penúltimo
+• Cada frase = parágrafo separado (máx. 2 linhas)
+• Detalhe sensorial cirúrgico (máx. 2 por post)
+• Diálogo real entre aspas
+• Micro-concordâncias progressivas antes do CTA
+• Fechar loop antes da frase-sentença final
+• "⸺" + CTA suave
+
+ENGENHARIA SOCIAL (pelo menos 4 por peça):
+Loop Zeigarnik | Identidade tribal | Reciprocidade assimétrica | Dissonância cognitiva | Prova social por osmose | Micro-sim | Espelho do leitor | Ancoragem de status
+
+PROIBIDO: Emojis | Hashtags | "Clique no link da bio" | mindset, jornada, propósito, abundância | Parágrafos >3 linhas | Números redondos
+
+VOCABULÁRIO: "ticket", "caixa", "posicionamento", "carta invisível", "potência", "audiência", "DM", "conversão", "esqueleto", "é isso", "é matemática", "no fodassse"
+
+FORMATO COPY: 300–600 palavras. Sem título. Começa direto. Termina frase-sentença + ⸺ + CTA.
+
+COMPORTAMENTO:
+• Copy/legenda/script: aplica TODO o DNA acima
+• Conversa/análise: parceiro estratégico direto, sem enrolação
+• Imagem: prompt detalhado para Midjourney/DALL-E
+• SEMPRE responde em português brasileiro
+• NUNCA começa com "Claro!", "Ótimo!", "Com certeza!" — vai direto
+• Nas copys: parágrafos curtos, NUNCA bullet points`;
+
+const MODES={
+  chat:['CONVERSA LIVRE','DNA ATIVO',''],
+  copy:['MODO COPY','DNA + ENG.SOCIAL','\n\nMODO COPY ATIVO: Entregue a peça pronta. Aplica TODO o DNA. Zero explicações antes.'],
+  image:['PROMPT IMAGEM','MIDJOURNEY/DALL-E','\n\nMODO IMAGEM: Crie prompt detalhado para Midjourney/DALL-E estilo Luccas — casual, bastidor real, sem produção. Inclua estilo, iluminação, composição, mood.'],
+  strategy:['ESTRATÉGIA','ANÁLISE AVANÇADA','\n\nMODO ESTRATÉGIA: Pense como estrategista que fatura alto. Direto, dados, zero motivacional.']
+};
+
+// VOICE — ElevenLabs TTS (primário) + navegador (fallback)
+let curAudio=null;
+
+function setSpeaking(on){
+  S.speaking=on;
+  document.getElementById('reactor').classList.toggle('speaking',on);
+  document.getElementById('waveform').classList.toggle('active',on);
+  document.getElementById('statusTxt').textContent=on?'TRANSMITINDO...':'AGUARDANDO COMANDO';
+  upM('mV','mVb',on?'TX':'ON','100%');
+}
+
+async function speak(text){
+  if(!S.voice) return;
+  stopSpeech();
+  const clean=text.replace(/[◈✦▸⸺]/g,'').replace(/https?:\/\/\S+/g,'').substring(0,800);
+
+  if(S.elKey){
+    try{
+      setSpeaking(true);
+      // ElevenLabs — voz masculina PT-BR: "Daniel" ou voice_id padrão
+      const voiceId = S.elVoice || 'onwK4e9ZLuTAKqWW03F9'; // Daniel (multilingual)
+      const res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
+        method:'POST',
+        headers:{
+          'xi-api-key': S.elKey,
+          'Content-Type':'application/json',
+          'Accept':'audio/mpeg'
+        },
+        body:JSON.stringify({
+          text: clean,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings:{ stability:0.45, similarity_boost:0.75, style:0.35, use_speaker_boost:true }
+        })
+      });
+      if(!res.ok) throw new Error('ElevenLabs erro: '+res.status);
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      curAudio=new Audio(url);
+      curAudio.onended=()=>{ setSpeaking(false); URL.revokeObjectURL(url); };
+      curAudio.onerror=()=>{ setSpeaking(false); speakFallback(clean); };
+      curAudio.play();
+      return;
+    }catch(e){
+      setSpeaking(false);
+      speakFallback(clean);
+    }
+  } else {
+    speakFallback(clean);
+  }
+}
+
+let synth=window.speechSynthesis, voices=[], curUtter=null;
+function loadV(){ voices=synth.getVoices(); }
+loadV(); if(synth.onvoiceschanged!==undefined) synth.onvoiceschanged=loadV;
+
+function speakFallback(clean){
+  if(curUtter) synth.cancel();
+  const u=new SpeechSynthesisUtterance(clean);
+  u.lang='pt-BR'; u.rate=0.95; u.pitch=0.85; u.volume=1;
+  const ptV=voices.find(v=>v.lang.includes('pt')&&v.lang.includes('BR'))||voices.find(v=>v.lang.startsWith('pt'));
+  if(ptV) u.voice=ptV;
+  u.onstart=()=>setSpeaking(true);
+  u.onend=u.onerror=()=>setSpeaking(false);
+  curUtter=u; synth.speak(u);
+}
+
+function stopSpeech(){
+  if(curAudio){ curAudio.pause(); curAudio=null; }
+  if(synth) synth.cancel();
+  setSpeaking(false);
+}
+
+// MIC
+let rec=null;
+function initRec(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)) return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR(); rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult=e=>{
+    document.getElementById('inp').value=e.results[0][0].transcript;
+    autoR(document.getElementById('inp'));
+    document.getElementById('micBtn').classList.remove('listening');
+    setTimeout(()=>send(),300);
+  };
+  rec.onend=()=>{ document.getElementById('micBtn').classList.remove('listening'); document.getElementById('statusTxt').textContent='AGUARDANDO COMANDO'; };
+  rec.onerror=()=>{ document.getElementById('micBtn').classList.remove('listening'); toast('Microfone indisponível','err'); };
+}
+initRec();
+function toggleMic(){
+  if(!rec){ toast('Voz não suportada neste navegador','err'); return; }
+  const btn=document.getElementById('micBtn');
+  if(btn.classList.contains('listening')){ rec.stop(); btn.classList.remove('listening'); }
+  else{ stopSpeech(); rec.start(); btn.classList.add('listening'); document.getElementById('statusTxt').textContent='OUVINDO...'; toast('Ouvindo — fale agora'); }
+}
+
+// ═══ SEND — GROQ API ═══
+async function send(){
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt||document.getElementById('sendBtn').disabled) return;
+  if(!S.ak){ toast('Configure sua API Key do Groq','err'); openCfg(); return; }
+
+  document.getElementById('empty').style.display='none';
+  addMsg('user',txt);
+  S.history.push({role:'user',content:txt});
+  S.msgCount++;
+  inp.value=''; inp.style.height='22px';
+  document.getElementById('statusTxt').textContent='PROCESSANDO...';
+
+  const btn=document.getElementById('sendBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin">◌</span>';
+  const tid='ty_'+Date.now(); addTyping(tid);
+
+  const model=document.getElementById('modelSelect').value;
+  const sys=DNA()+MODES[S.mode][2];
+
+  try{
+    // Groq API endpoint
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${S.ak}`
+      },
+      body:JSON.stringify({
+        model: model,
+        max_tokens: 1500,
+        temperature: 0.8,
+        messages:[
+          {role:'system', content:sys},
+          ...S.history.slice(-18)
+        ]
+      })
+    });
+
+    const data=await res.json();
+    removeTyping(tid);
+
+    if(data.error) throw new Error(data.error.message||JSON.stringify(data.error));
+
+    const reply=data.choices[0].message.content;
+    S.history.push({role:'assistant',content:reply});
+    S.lastCopy=reply; S.copyCount++;
+
+    addMsg('jarvis',reply,true);
+
+    // Metrics
+    upM('mM','mMb',S.msgCount,Math.min(S.msgCount*5,100)+'%');
+    upM('mC','mCb',S.copyCount,Math.min(S.copyCount*10,100)+'%');
+
+    // Preview
+    document.getElementById('previewSec').style.display='block';
+    document.getElementById('previewBox').textContent=reply.substring(0,400)+(reply.length>400?'...':'');
+
+    // Speak
+    speak(reply);
+
+    // Auto-notion
+    if(S.autoN&&(S.mode==='copy'||/legenda|copy|script|gancho/i.test(txt))) setTimeout(()=>saveNotion(reply,txt),600);
+
+    document.getElementById('statusTxt').textContent='RESPOSTA ENTREGUE';
+    setTimeout(()=>{ if(!S.speaking) document.getElementById('statusTxt').textContent='AGUARDANDO COMANDO'; },3000);
+
+  }catch(e){
+    removeTyping(tid);
+    addMsg('jarvis','Erro: '+e.message+'\n\nVerifique sua API Key do Groq nas configurações.');
+    document.getElementById('statusTxt').textContent='ERRO';
+  }
+
+  btn.disabled=false; btn.innerHTML='➤';
+  document.getElementById('msgs').scrollTop=999999;
+}
+
+function addMsg(role,text,actions=false){
+  const msgs=document.getElementById('msgs');
+  const d=document.createElement('div'); d.className=`msg ${role}`;
+  const av=role==='user'?(S.name?S.name.substring(0,2).toUpperCase():'EU'):'JV';
+  const enc=encodeURIComponent(text);
+  const acts=actions&&role==='jarvis'?`
+    <div class="msg-acts">
+      <button class="act-btn" onclick="copyTxt(this)">COPIAR</button>
+      <button class="act-btn" onclick="speak(decodeURIComponent('${enc}'))">▶ VOZ</button>
+      <button class="act-btn n" onclick="saveNotion(decodeURIComponent('${enc}'))">→ NOTION</button>
+      <button class="act-btn" onclick="postShare('instagram','${enc}')">INSTA</button>
+      <button class="act-btn" onclick="postShare('tiktok','${enc}')">TIKTOK</button>
+    </div>`:'';
+  d.innerHTML=`<div class="av">${av}</div><div class="msg-body"><div class="bubble">${esc(text)}</div>${acts}</div>`;
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addTyping(id){
+  const msgs=document.getElementById('msgs');
+  const d=document.createElement('div'); d.className='msg jarvis'; d.id=id;
+  d.innerHTML=`<div class="av">JV</div><div class="msg-body"><div class="bubble"><div class="typing-ind"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div></div></div>`;
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping(id){ const e=document.getElementById(id); if(e) e.remove(); }
+function copyTxt(btn){ const b=btn.closest('.msg-body').querySelector('.bubble'); navigator.clipboard.writeText(b.textContent).then(()=>{ btn.textContent='✓'; setTimeout(()=>btn.textContent='COPIAR',2000); }); }
+
+// NOTION
+async function connectNotion(){
+  const k=document.getElementById('nKey').value.trim();
+  const db=document.getElementById('nDb').value.trim();
+  if(!k||!db){ toast('Preencha API Key e Database ID','err'); return; }
+  S.nk=k; S.ndb=db;
+  try{ sessionStorage.setItem('jcfg',JSON.stringify(S)); }catch(e){}
+  toast('Notion configurado','ok');
+  upM('mN','mNb','ON','100%','rgba(0,255,100,0.7)');
+  addNLog('Notion conectado','✓');
+}
+
+async function saveNotion(text,title=''){
+  const t=typeof text==='string'&&text.startsWith('%')?decodeURIComponent(text):text;
+  if(!S.nk||!S.ndb){ toast('Configure o Notion primeiro','err'); return; }
+  const ttl=(title||'Copy — '+new Date().toLocaleDateString('pt-BR')).substring(0,100);
+  try{
+    const r=await fetch('https://api.notion.com/v1/pages',{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${S.nk}`,'Content-Type':'application/json','Notion-Version':'2022-06-28'},
+      body:JSON.stringify({parent:{database_id:S.ndb},properties:{Name:{title:[{text:{content:ttl}}]}},children:[{object:'block',type:'paragraph',paragraph:{rich_text:[{type:'text',text:{content:t.substring(0,2000)}}]}}]})
+    });
+    const data=await r.json();
+    if(data.object==='page'){ toast('Salvo no Notion','ok'); addNLog(ttl.substring(0,26)+'...','✓'); }
+    else throw new Error(data.message||'Erro');
+  }catch(e){ toast('Notion: '+e.message,'err'); }
+}
+
+function addNLog(title,icon){
+  const log=document.getElementById('nLog');
+  const d=document.createElement('div'); d.className='n-item';
+  d.innerHTML=`<span>${icon}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</span><span style="font-size:9px;opacity:.4">${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>`;
+  log.insertBefore(d,log.firstChild);
+}
+
+// POST
+function postShare(platform,enc){
+  const text=enc?decodeURIComponent(enc):S.lastCopy;
+  if(!text){ toast('Nenhuma copy gerada ainda','err'); return; }
+  navigator.clipboard.writeText(text).then(()=>{
+    toast(`Copiado! Cole no ${platform==='instagram'?'Instagram':'TikTok'}`,'ok');
+    const n=document.getElementById('postNote');
+    n.style.display='block';
+    n.innerHTML=platform==='instagram'
+      ?'▸ Copy copiada<br>▸ Abra o Instagram<br>▸ Nova publicação<br>▸ Cole a legenda<br>▸ Foto casual'
+      :'▸ Copy copiada<br>▸ Abra o TikTok<br>▸ Grave o vídeo<br>▸ Cole na descrição';
+  });
+}
+
+// METRICS
+function upM(vid,bid,val,pct,color){
+  const v=document.getElementById(vid); const b=document.getElementById(bid);
+  if(v) v.textContent=val;
+  if(b){ b.style.width=pct; if(color) b.style.background=color; }
+}
+setInterval(()=>{ if(!S.speaking){ const v=Math.floor(Math.random()*15+80); upM('mZ','mZb',v+'%',v+'%'); } },3000);
+
+// UI
+function setMode(m,btn){ S.mode=m; document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); toast(MODES[m][0]); }
+function toggleDna(){ S.dna=!S.dna; const b=document.getElementById('tbDna'); b.classList.toggle('on',S.dna); b.textContent=S.dna?'DNA':'DNA OFF'; document.getElementById('dnaLabel').textContent=S.dna?'ATIVO':'OFF'; toast(S.dna?'DNA ativado':'DNA desativado'); }
+function toggleVoice(){ S.voice=!S.voice; const b=document.getElementById('tbVoz'); b.classList.toggle('on',S.voice); b.textContent=S.voice?'VOZ':'VOZ OFF'; upM('mV','mVb',S.voice?'ON':'OFF',S.voice?'100%':'0%'); if(!S.voice) stopSpeech(); toast(S.voice?'Voz ativada':'Voz desativada'); }
+function toggleAutoN(){ S.autoN=!S.autoN; const b=document.getElementById('tbAutoN'); b.classList.toggle('on',S.autoN); b.textContent=S.autoN?'AUTO-NOTION ON':'AUTO-NOTION'; toast(S.autoN?'Auto-Notion ativado':'Auto-Notion desativado'); }
+function addInp(t){ const i=document.getElementById('inp'); i.value+=t; i.focus(); }
+function qp(t){ document.getElementById('inp').value=t; document.getElementById('empty').style.display='none'; send(); }
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }
+function autoR(el){ el.style.height='22px'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// CONFIG
+function openCfg(){
+  document.getElementById('cfgAk').value=S.ak||'';
+  document.getElementById('cfgElKey').value=S.elKey||'';
+  document.getElementById('cfgElVoice').value=S.elVoice||'';
+  document.getElementById('cfgNk').value=S.nk||'';
+  document.getElementById('cfgNd').value=S.ndb||'';
+  document.getElementById('cfgName').value=S.name||'Luccas';
+  document.getElementById('cfgModal').classList.add('open');
+}
+function closeCfg(){ document.getElementById('cfgModal').classList.remove('open'); }
+function saveCfg(){
+  S.ak=document.getElementById('cfgAk').value.trim();
+  S.elKey=document.getElementById('cfgElKey').value.trim();
+  S.elVoice=document.getElementById('cfgElVoice').value.trim();
+  S.nk=document.getElementById('cfgNk').value.trim();
+  S.ndb=document.getElementById('cfgNd').value.trim();
+  S.name=document.getElementById('cfgName').value.trim()||'Luccas';
+  try{ sessionStorage.setItem('jcfg',JSON.stringify(S)); }catch(e){}
+  if(S.nk) document.getElementById('nKey').value='••••••••';
+  if(S.ndb) document.getElementById('nDb').value=S.ndb;
+  if(S.nk&&S.ndb) upM('mN','mNb','ON','100%','rgba(0,255,100,0.7)');
+  closeCfg(); toast('Configurações salvas','ok');
+}
+document.getElementById('cfgModal').addEventListener('click',function(e){ if(e.target===this) closeCfg(); });
+
+// TOAST
+let tt;
+function toast(msg,type=''){ const el=document.getElementById('toast'); el.textContent=msg; el.className=`toast show ${type}`; clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),3000); }
+
+// INIT
+document.getElementById('tbVoz').classList.toggle('on',S.voice);
+if(!S.ak) setTimeout(()=>toast('Configure sua API Key do Groq para começar','err'),800);
+else toast('Sistema online — Groq ativo','ok');
+</script>
+</body>
+</html>
